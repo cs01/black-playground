@@ -1,11 +1,11 @@
-# Black Online Demo
+# Python Bytecode Explorer
+is a browser-based interactive Python disassembler. It takes your Python source code and shows you what the CPython bytecode looks like.
 
-[![Build Status](https://travis-ci.com/jpadilla/black-online.svg?branch=master)](https://travis-ci.com/jpadilla/black-online) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[Try it live.](https://grassfedcode.com/pbe)
 
-Black is an [open-source](https://github.com/ambv/black) Python code formatter by [@ambv](https://github.com/ambv). This is an example implementation.
+![screenshot](https://github.com/cs01/python-bytecode-explorer/raw/master/screenshot.png)
 
-[Check it out](https://black.now.sh).
+Read more: https://docs.python.org/3/glossary.html#term-bytecode
 
-[![black-online-demo](https://user-images.githubusercontent.com/83319/38846077-6e618f8e-41c8-11e8-9b71-145b8bc0b478.gif)](https://black.now.sh)
-
-You might also like: [YAPF Online Demo](https://yapf.now.sh)
+# Credits
+This project was forked from José Padilla's [Black Playground](https://github.com/jpadilla/black-playground).

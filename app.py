@@ -1,9 +1,10 @@
+#!/usr/bin/env python3
 import os
-import urllib
 import json
 import base64
 import lzma
 import black
+import dis
 
 from flask import (
     Flask,
@@ -31,9 +32,11 @@ def decompress_state(state):
 def format_code(source, line_length, skip_string_normalization, py36, pyi):
     try:
         mode = black.FileMode.from_configuration(
-            py36=py36, pyi=pyi, skip_string_normalization=skip_string_normalization
-        )
-        formatted = black.format_str(source, line_length=line_length, mode=mode)
+            py36=py36,
+            pyi=pyi,
+            skip_string_normalization=skip_string_normalization)
+        formatted = black.format_str(
+            source, line_length=line_length, mode=mode)
     except Exception as exc:
         formatted = exc
 
@@ -42,7 +45,8 @@ def format_code(source, line_length, skip_string_normalization, py36, pyi):
 
 @app.route("/favicon.ico")
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, "static"), "favicon.ico")
+    return send_from_directory(
+        os.path.join(app.root_path, "static"), "favicon.ico")
 
 
 @app.route("/", methods=["POST", "GET"])
@@ -50,19 +54,18 @@ def index():
     if request.method == "POST":
         source = request.form["source"]
         line_length = int(request.form["line_length"])
-        skip_string_normalization = bool(request.form.get("skip_string_normalization"))
+        skip_string_normalization = bool(
+            request.form.get("skip_string_normalization"))
         py36 = bool(request.form.get("py36"))
         pyi = bool(request.form.get("pyi"))
 
-        state = compress_state(
-            {
-                "sc": source,
-                "ll": line_length,
-                "ssn": skip_string_normalization,
-                "py36": py36,
-                "pyi": pyi,
-            }
-        )
+        state = compress_state({
+            "sc": source,
+            "ll": line_length,
+            "ssn": skip_string_normalization,
+            "py36": py36,
+            "pyi": pyi,
+        })
 
         return redirect(url_for(".index", state=state))
 
@@ -75,15 +78,13 @@ def index():
         py36 = False
         pyi = False
 
-        state = compress_state(
-            {
-                "sc": source,
-                "ll": line_length,
-                "ssn": skip_string_normalization,
-                "py36": py36,
-                "pyi": pyi,
-            }
-        )
+        state = compress_state({
+            "sc": source,
+            "ll": line_length,
+            "ssn": skip_string_normalization,
+            "py36": py36,
+            "pyi": pyi,
+        })
 
         return redirect(url_for(".index", state=state))
 
@@ -94,11 +95,15 @@ def index():
     py36 = state.get("py36")
     pyi = state.get("pyi")
 
-    formatted = format_code(source, line_length, skip_string_normalization, py36, pyi)
+    try:
+        bytecode = dis.code_info(source) + "\n\n\n" + dis.Bytecode(
+            source).dis()
+    except SyntaxError as e:
+        bytecode = str(e)
 
     data = {
         "source_code": source,
-        "formatted_code": formatted,
+        "bytecode": bytecode,
         "options": {
             "line_length": line_length,
             "skip_string_normalization": skip_string_normalization,
@@ -109,49 +114,6 @@ def index():
     }
 
     return render_template("index.html", **data)
-
-
-@app.route("/report-issue", methods=["POST"])
-def report_issue():
-    source = request.form["source"]
-    line_length = int(request.form["line_length"])
-    skip_string_normalization = bool(request.form.get("skip_string_normalization"))
-    py36 = bool(request.form.get("py36"))
-    pyi = bool(request.form.get("pyi"))
-
-    formatted = format_code(source, line_length, skip_string_normalization, py36, pyi)
-
-    options = [f"`--line-length={line_length}`"]
-
-    if skip_string_normalization:
-        options.append("`--skip-string-normalization`")
-
-    if py36:
-        options.append("`--py36`")
-
-    if pyi:
-        options.append("`--pyi`")
-
-    state = compress_state(
-        {
-            "sc": source,
-            "ll": line_length,
-            "ssn": skip_string_normalization,
-            "py36": py36,
-            "pyi": pyi,
-        }
-    )
-
-    data = {
-        "source_code": source,
-        "formatted_code": formatted,
-        "options": "\n".join(options),
-        "black_version": black.__version__,
-        "playground_link": f"https://black.now.sh/?state={state}",
-    }
-
-    body = urllib.parse.quote_plus(render_template("issue.md", **data))
-    return redirect(f"https://github.com/ambv/black/issues/new?body={body}")
 
 
 if __name__ == "__main__":
